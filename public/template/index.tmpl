@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]>      <html class="no-js"> <!--<![endif]-->
+<html lang="pt-br">
+
+<head>
+	<meta charset='utf-8'>
+	<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+	<title>{{ .title }}</title>
+	<meta name='viewport' content='width=device-width, initial-scale=1'>
+	<!-- UIkit CSS -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.15.0/dist/css/uikit.min.css" />
+	<!-- UIkit JS -->
+	<script src="https://cdn.jsdelivr.net/npm/uikit@3.15.0/dist/js/uikit.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/uikit@3.15.0/dist/js/uikit-icons.min.js"></script>
+</head>
+
+<body>
+	<div class="uk-container">
+		<table class="uk-table uk-table-hover uk-table-middle uk-table-divider">
+			<caption></caption>
+			<thead>
+				<tr>
+					<th class="uk-table-shrink">ID</th>
+					<th class="uk-table-shrink">User</th>
+					<th class="uk-table-shrink">Options</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{ range .users }}
+					<tr>
+						<td>{{ .Id }}</td>
+						<td>{{ .Name }}</td>
+						<td>
+							<a href="#" class="uk-icon-button uk-button-secondary uk-margin-small-right" uk-icon="pencil" onclick="edit('{{ .Id }}','{{ .Name }}')">
+							<a href="#" class="uk-icon-button uk-button-danger uk-margin-left" uk-icon="close" onclick="remove('{{ .Id }}')"></a>
+						</td>
+					</tr>						
+				{{ end }}
+			</tbody>
+		</table>
+	</div>
+	<div class="uk-container uk-flex uk-background-muted">
+		<section class="uk-padding-small">
+			<input class="uk-input uk-pill uk-form-width-small uk-padding uk-margin-right" id="token" type="hidden" placeholder="Token" value="{{.token }}">
+			<input class="uk-input uk-form-width-small uk-border-pill uk-margin-right" id="id" type="text" placeholder="Id" disabled>
+			<input class="uk-input uk-form-width-small uk-border-pill uk-margin-right" id="name" type="text" placeholder="Name">
+			<a href="#" class="uk-icon-button uk-margin-small-right uk-button-primary" uk-icon="plus-circle" onclick="save()"></a>
+		</section>
+	</div>
+
+	<script>
+		function getToken() {
+			return document.getElementById("token").value;
+		}
+
+		function successTransition() {
+			UIkit.notification.closeAll();
+			UIkit.notification({
+				message: "<div class='uk-card uk-card-default uk-card-body'><span uk-icon='icon: check'></span> Done!</div>",
+				status: 'successful',
+				pos: 'top-center',
+				timeout: 1000
+			});
+			setTimeout(() => {
+				location.reload();
+			}, 1200);
+		}
+
+		function errorTransition(error) {
+			UIkit.notification.closeAll();
+			UIkit.notification({
+				message: `<div class='uk-card uk-card-default uk-card-body'><span uk-icon='icon: ban'></span> Error: ${error}</div>`,
+				status: 'danger',
+				pos: 'top-center',
+				timeout: 3000
+			});
+			console.error(error);
+		}
+
+
+		function remove(id) {
+			fetch(`/api/${id}`, {
+					method: 'DELETE',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': 'Bearer ' + getToken()
+					}
+				}).then(function (response) {
+					if (response.ok) {
+						return successTransition();
+					}
+					errorTransition(response.statusText);
+				}).catch(function (error) {
+					errorTransition(error);
+				});
+		}
+
+		function save() {
+
+			try {
+
+				let body = {}
+
+				body.name = document.getElementById('name').value.trim();
+
+				let method = 'POST';
+
+				if (document.getElementById('id').value != '') {
+					body.id = parseInt(document.getElementById('id').value);
+					method = 'PUT';
+				}
+
+				fetch('/api/', {
+					method: method,
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': 'Bearer ' + getToken()
+					}, body:JSON.stringify(body)
+				}).then(function (response) {
+					if (response.ok) {
+						return successTransition();
+					}
+					errorTransition(response.statusText);
+				}).catch(function (error) {
+					errorTransition(error);
+				});
+
+			} catch (error) {
+				console.error(error);
+			}
+		}
+
+		function edit(id,name) {
+			document.getElementById('id').value = id;
+			document.getElementById('name').value = name;
+		}
+	</script>
+</body>
+
+</html>
